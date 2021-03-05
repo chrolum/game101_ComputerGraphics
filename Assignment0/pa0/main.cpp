@@ -3,6 +3,9 @@
 #include<eigen3/Eigen/Dense>
 #include<iostream>
 
+int Rotate(Eigen::Matrix3f &t, double deg/*rad*/);
+int translation_2d(Eigen::Matrix3f &m, int x, int y);
+
 int main(){
 
     // Basic Example of cpp
@@ -39,10 +42,46 @@ int main(){
     // matrix output
     std::cout << "Example of output \n";
     std::cout << i << std::endl;
+    std::cout << "Example of output matrix add i + j\n";
     // matrix add i + j
+    std::cout << i + j << std::endl;
     // matrix scalar multiply i * 2.0
+    std::cout << "Example of output matrix i * 2.0\n";
+    std::cout << i * 2.0 << std::endl;
+    std::cout << "Example of output matrix add i * j\n";
     // matrix multiply i * j
+    std::cout << i * j << std::endl;
+    std::cout << "Example of output matrix add i * v\n";
     // matrix multiply vector i * v
+    std::cout << i * v << std::endl;
 
+    // homogeneous coordinates point(2,1)
+    Eigen::Matrix3f t = Eigen::Matrix3f::Identity(3, 3);
+    //Rotate 45 degree in rad
+    double deg = 90.0/180.0*acos(-1);
+    Rotate(t, deg);
+    //translation
+    Eigen::Vector3f p(1.0f, 1.0f, 1.0f);
+    // translation_2d(t, 1, 2);
+    p = t * p;
+
+    std::cout << p << std::endl;
+
+    return 0;
+}
+
+int Rotate(Eigen::Matrix3f &t, double deg/*rad*/)
+{
+    Eigen::Matrix3f R; //homogeneous form
+    R << std::cos(deg), -std::sin(deg), 0, std::sin(deg), std::cos(deg), 0, 0, 0, 1;
+    t = R * t;
+    return 0;
+}
+
+int translation_2d(Eigen::Matrix3f &m, int x, int y)
+{
+    Eigen::Matrix3f t_xy;
+    t_xy << 0, 0, x, 0, 0, y, 0, 0, 1;
+    m = m + t_xy;
     return 0;
 }
