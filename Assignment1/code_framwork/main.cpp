@@ -6,6 +6,11 @@
 
 constexpr double MY_PI = 3.1415926;
 
+float angle_to_rad(float angle)
+{
+    return angle/180.0*acos(-1);
+}
+
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -23,9 +28,19 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
 {
     Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 
-    // TODO: Implement this function
+
+    float deg = rotation_angle/180.0*acos(-1);
+    
     // Create the model matrix for rotating the triangle around the Z axis.
     // Then return it.
+
+    Eigen::Matrix4f rotate_m;
+    rotate_m << cos(deg), -sin(deg), 0, 0,
+        sin(deg), cos(deg), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1;
+
+    model = rotate_m * model;
 
     return model;
 }
@@ -35,11 +50,33 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 {
     // Students will implement this function
 
-    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
-
-    // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
+    Eigen::Matrix4f persp_to_ortho, projection;
+    Eigen::Matrix4f ortho, scale, translate;
+
+    //persp to ortholl
+    persp_to_ortho << zNear, 0, 0, 0, 
+        0, zNear, 0, 0, 
+        0, 0, zNear+zFar ,-(zNear*zFar),
+        0, 0, 1, 0;
+
+    float t = zNear * tan(eye_fov); //half heigth
+    float r = aspect_ratio * t;
+
+    scale << 1/r, 0 ,0 ,0,
+        0, 1/t, 0, 0,
+        0, 0, 2/(zNear-zFar), 0,
+        0, 0, 0, 1;
+
+    // not need to translate x and y, the cubic is int the center, just move z axis
+    translate << 1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, -(zNear+zFar)/2,
+        0, 0, 0, 1;
+
+    ortho = scale * translate;
+    projection = ortho*persp_to_ortho;
 
     return projection;
 }
@@ -56,8 +93,6 @@ int main(int argc, const char** argv)
         if (argc == 4) {
             filename = std::string(argv[3]);
         }
-        else
-            return 0;
     }
 
     rst::rasterizer r(700, 700);
