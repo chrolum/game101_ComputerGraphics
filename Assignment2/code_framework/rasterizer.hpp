@@ -15,7 +15,9 @@ namespace rst
     enum class Buffers
     {
         Color = 1,
-        Depth = 2
+        Depth = 2,
+        SampleColor = 3,
+        SampleDepth = 4
     };
 
     inline Buffers operator|(Buffers a, Buffers b)
@@ -93,9 +95,15 @@ namespace rst
         std::vector<Eigen::Vector3f> frame_buf;
 
         std::vector<float> depth_buf;
+        std::vector<float> sample_depth_buf;
+        std::vector<Eigen::Vector3f> sample_fram_buf;
+        int get_sample_idx(int x, int y, int s);
+        Eigen::Vector2f get_coordinate_by_sample_idx(float x, float y, int s);
         int get_index(int x, int y);
-
         int width, height;
+
+        int super_sample_size = 3; //n*n
+        float pixel_width = 1;
 
         int next_id = 0;
         int get_next_id() { return next_id++; }

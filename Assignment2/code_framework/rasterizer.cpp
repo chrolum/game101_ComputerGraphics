@@ -39,7 +39,6 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
     return Vector4f(v3.x(), v3.y(), v3.z(), w);
 }
 
-
 static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
     //Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
@@ -72,7 +71,7 @@ static std::tuple<float, float, float> computeBarycentric2D(float x, float y, co
     return {c1,c2,c3};
 }
 
-float get_z_interpolated(float x, float y, const Triangle& t)
+static float get_z_interpolated(float x, float y, const Triangle& t)
 {
         auto v = t.toVector4();
         auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
@@ -151,19 +150,45 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
         left = (int)ceil(leftf), right = (int)floor(rightf);
     
     // iterate bounding box
+    Vector2f sample;
+    int sample_num = super_sample_size * super_sample_size;
+    float sample_z_interpolated;
     for (size_t y = bottom; y <= top; y++)//y axis
     {
         for (size_t x = left; x <= right; x++)//x axis
         {
+            bool hasUpdateZ = false;
             //Anti-aliasing: nxn super sampling
             //check each sample in which triangle
-            float z_interpolated = get_z_interpolated(x, y, t);
-            int depth_idx = get_index(x, y);
-            if (insideTriangle(x+0.5f, y+0.5f, t.v) && depth_buf[depth_idx] > z_interpolated)
+            for (int s_idx = 0; s_idx < sample_num; s_idx++)
             {
-                depth_buf[depth_idx] = z_interpolated;
-                set_pixel(Vector3f(x, y, 0), t.getColor());
+                sample = get_coordinate_by_sample_idx(x, y, s_idx);
+                sample_z_interpolated = get_z_interpolated(sample.x(), sample.y(), t);
+                int sample_idx = get_sample_idx(x, y, s_idx);
+                if (insideTriangle(sample.x(), sample.y(), t.v) 
+                    && sample_depth_buf[sample_idx] > sample_z_interpolated)
+                {
+                    sample_depth_buf[sample_idx] = sample_z_interpolated;
+                    sample_fram_buf[sample_idx] = t.getColor();
+                    hasUpdateZ = true;
+                }
             }
+
+            //Opt:: this pixel's sample not update any color, not need to re-mix color
+            if (!hasUpdateZ)
+                continue;
+
+            //mix the all sample color in one pixel
+            // int z_buffer_idx = get_index(x, y);
+            Vector3f pixel_color(0, 0, 0);
+
+            int mix_sample_idx = get_sample_idx(x, y, 0);
+            for (int i = 0; i < super_sample_size*super_sample_size; i++)
+            {
+                pixel_color += sample_fram_buf[mix_sample_idx + i];
+            }
+            pixel_color = pixel_color / (super_sample_size*super_sample_size);
+            set_pixel(Vector3f(x, y, 0), pixel_color);
         }
     }
 }
@@ -193,12 +218,24 @@ void rst::rasterizer::clear(rst::Buffers buff)
     {
         std::fill(depth_buf.begin(), depth_buf.end(), std::numeric_limits<float>::infinity());
     }
+
+    if ((buff & rst::Buffers::SampleDepth) == rst::Buffers::SampleDepth)
+    {
+        std::fill(sample_depth_buf.begin(), sample_depth_buf.end(), std::numeric_limits<float>::infinity());
+    }
+
+    if ((buff & rst::Buffers::SampleColor) == rst::Buffers::SampleColor)
+    {
+        std::fill(sample_fram_buf.begin(), sample_fram_buf.end(), Eigen::Vector3f{0, 0, 0});
+    }
 }
 
 rst::rasterizer::rasterizer(int w, int h) : width(w), height(h)
 {
     frame_buf.resize(w * h);
     depth_buf.resize(w * h);
+    sample_depth_buf.resize(w * h * super_sample_size*super_sample_size);
+    sample_fram_buf.resize(w * h * super_sample_size*super_sample_size);
 }
 
 int rst::rasterizer::get_index(int x, int y)
@@ -213,5 +250,30 @@ void rst::rasterizer::set_pixel(const Eigen::Vector3f& point, const Eigen::Vecto
     frame_buf[ind] = color;
 
 }
+
+int rst::rasterizer::get_sample_idx(int x, int y, int s)
+{
+    //FIXME:: vaild this function
+    return ((height-1-y)*width + x)*super_sample_size*super_sample_size + s;
+}
+
+Eigen::Vector2f rst::rasterizer::get_coordinate_by_sample_idx(float x, float y, int s)
+{
+    // idx increase from left to right, from bottom to top
+    // Example: 3x3 sample
+    // 6 | 7 | 8
+    // 3 | 4 | 5
+    // 0 | 1 | 2
+    float step = pixel_width / super_sample_size;
+    if (s == 0)
+    {
+        return Vector2f(x+step/2, y+step/2);
+    }
+
+    return Vector2f( (x+step/2+step*(s%super_sample_size)), 
+        (y+step/2+step*(s/super_sample_size))
+        );
+}
+
 
 // clang-format on
