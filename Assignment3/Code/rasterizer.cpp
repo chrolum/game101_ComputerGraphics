@@ -336,24 +336,20 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
             if (insideTriangle(x+0.5f, y+0.5f, t.v) && depth_buf[depth_idx] > z_interpolated)
             {
                 depth_buf[depth_idx] = z_interpolated;
-                //TODO: set color
-                // set_pixel(Vector3f(x, y, 0), t.color);
+                // TODO: Interpolate the attributes:
+                auto interpolated_color = get_color_interpolated(x, y, t);
+                auto interpolated_normal = get_normal_interpolated(x, y, t);
+                auto interpolated_texcoords = get_texcoords_interpolated(x, y, t);
+                // auto interpolated_shadingcoords
+
+                fragment_shader_payload payload( interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture ? &*texture : nullptr);
+                // payload.view_pos = interpolated_shadingcoords;
+                // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
+                auto pixel_color = fragment_shader(payload);
+                set_pixel(Vector2i(x, y), pixel_color);
             }
         }
-    }
-
-    // TODO: Interpolate the attributes:
-    // auto interpolated_color
-    // auto interpolated_normal
-    // auto interpolated_texcoords
-    // auto interpolated_shadingcoords
-
-    // Use: fragment_shader_payload payload( interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture ? &*texture : nullptr);
-    // Use: payload.view_pos = interpolated_shadingcoords;
-    // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
-    // Use: auto pixel_color = fragment_shader(payload);
-
- 
+    } 
 }
 
 void rst::rasterizer::set_model(const Eigen::Matrix4f& m)
