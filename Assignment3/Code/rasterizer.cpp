@@ -163,12 +163,56 @@ static bool insideTriangle(int x, int y, const Vector4f* _v){
     return false;
 }
 
+
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector4f* v){
     float c1 = (x*(v[1].y() - v[2].y()) + (v[2].x() - v[1].x())*y + v[1].x()*v[2].y() - v[2].x()*v[1].y()) / (v[0].x()*(v[1].y() - v[2].y()) + (v[2].x() - v[1].x())*v[0].y() + v[1].x()*v[2].y() - v[2].x()*v[1].y());
     float c2 = (x*(v[2].y() - v[0].y()) + (v[0].x() - v[2].x())*y + v[2].x()*v[0].y() - v[0].x()*v[2].y()) / (v[1].x()*(v[2].y() - v[0].y()) + (v[0].x() - v[2].x())*v[1].y() + v[2].x()*v[0].y() - v[0].x()*v[2].y());
     float c3 = (x*(v[0].y() - v[1].y()) + (v[1].x() - v[0].x())*y + v[0].x()*v[1].y() - v[1].x()*v[0].y()) / (v[2].x()*(v[0].y() - v[1].y()) + (v[1].x() - v[0].x())*v[2].y() + v[0].x()*v[1].y() - v[1].x()*v[0].y());
     return {c1,c2,c3};
 }
+
+
+//TODO: use map-reduce to implement interpolated
+static float get_z_interpolated(float x, float y, const Triangle& t)
+{
+        auto v = t.toVector4();
+        auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+        float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+        float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+        z_interpolated *= w_reciprocal;
+
+        return z_interpolated;
+}
+
+static Vector3f get_color_interpolated(float x, float y, const Triangle& t)
+{
+    auto v = t.toVector4();
+    auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+    
+    Vector3f color_interpolated = alpha * t.color[0] + beta * t.color[1] + gamma * t.color[2];
+
+    return color_interpolated;
+}
+
+static Vector3f get_normal_interpolated(float x, float y, const Triangle& t)
+{
+    auto v = t.toVector4();
+    auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+
+    Vector3f normal_interpolated = alpha * t.normal[0] + beta * t.normal[1] + gamma * t.normal[2];
+
+    return normal_interpolated;
+}
+
+static Vector2f get_texcoords_interpolated(float x, float y, const Triangle& t)
+{
+    auto v = t.toVector4();
+    auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+    Vector2f texcoords_interpolated = alpha * t.tex_coords[0] + beta * t.tex_coords[1] + gamma * t.tex_coords[2];
+
+    return texcoords_interpolated;
+}
+
 
 void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList) {
 
@@ -264,10 +308,39 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     //    * v[i].w() is the vertex view space depth value z.
     //    * Z is interpolated view space depth for the current pixel
     //    * zp is depth between zNear and zFar, used for z-buffer
-
-    // float Z = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
-    // float zp = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
-    // zp *= Z;
+    auto v = t.toVector4();// the vectri
+    
+    // Find out the bounding box of current triangle.
+    float topf = -1, bottomf = INFINITY, leftf = INFINITY, rightf = -1;//box
+    float x, y;
+    for (auto vex : v)
+    {
+        x = vex[0], y = vex[1];
+        topf = topf < y ? y : topf;
+        bottomf = bottomf > y ? y : bottomf;
+        leftf = leftf > x ? x : leftf;
+        rightf = rightf < x ? x : rightf;
+    }
+    int top = (int)floor(topf), bottom = (int)ceil(bottomf), 
+        left = (int)ceil(leftf), right = (int)floor(rightf);
+    
+    // iterate bounding box
+    for (size_t y = bottom; y <= top; y++)//y axis
+    {
+        for (size_t x = left; x <= right; x++)//x axis
+        {
+            //Anti-aliasing: nxn super sampling
+            //check each sample in which triangle
+            float z_interpolated = get_z_interpolated(x, y, t);
+            int depth_idx = get_index(x, y);
+            if (insideTriangle(x+0.5f, y+0.5f, t.v) && depth_buf[depth_idx] > z_interpolated)
+            {
+                depth_buf[depth_idx] = z_interpolated;
+                //TODO: set color
+                // set_pixel(Vector3f(x, y, 0), t.color);
+            }
+        }
+    }
 
     // TODO: Interpolate the attributes:
     // auto interpolated_color
