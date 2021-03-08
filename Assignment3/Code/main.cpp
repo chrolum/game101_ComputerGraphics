@@ -7,6 +7,7 @@
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "OBJ_Loader.h"
+#include <math.h>
 
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
@@ -49,7 +50,7 @@ Eigen::Matrix4f get_model_matrix(float angle)
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
-    // TODO: Use the same projection matrix from the previous assignments
+    // FIXME: Use the same projection matrix from the previous assignments
     Eigen::Matrix4f persp_to_ortho, projection;
     Eigen::Matrix4f ortho, scale, translate;
 
@@ -98,12 +99,18 @@ static Eigen::Vector3f reflect(const Eigen::Vector3f& vec, const Eigen::Vector3f
     return (2 * costheta * axis - vec).normalized();
 }
 
+
 struct light
 {
     Eigen::Vector3f position;
     Eigen::Vector3f intensity;
 };
 
+static Vector3f get_reflectance_light_intensity(const Eigen::Vector3f& k, const Vector3f& intensity)
+{
+    //diffuse, specular, or ambient
+    return Vector3f(intensity[0]*k[0], intensity[1]*k[1], intensity[2]*k[2]);
+}
 Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
 {
     Eigen::Vector3f return_color = {0, 0, 0};
@@ -138,7 +145,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
-
+        
     }
 
     return result_color * 255.f;
@@ -163,14 +170,38 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Vector3f point = payload.view_pos;
     Eigen::Vector3f normal = payload.normal;
 
+
     Eigen::Vector3f result_color = {0, 0, 0};
+
+    Eigen::Vector3f ld, ls, la;
     for (auto& light : lights)
     {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
+        // FIXME: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
-        
-    }
 
+        float r = abs((light.position-point).norm());
+
+        // std::cout << point << std::endl;
+        // std::cout << light.position - point << std::endl;
+
+        Vector3f v = (eye_pos-point).normalized();
+        Vector3f l = (light.position-point).normalized();
+        Vector3f h = (v+l).normalized();
+        float d_dot = normal.dot(l);
+        float s_dot = normal.dot(h);
+
+        s_dot = std::max(s_dot, 0.0f);
+        d_dot = std::max(d_dot, 0.0f);
+        s_dot = pow(s_dot, p);
+
+        double r_sqr = pow(r, 2);
+        // std::cout << "r:" << r << " "<< r_sqr << std::endl;
+        ld = (get_reflectance_light_intensity(kd, light.intensity/r_sqr))*d_dot;
+        la = get_reflectance_light_intensity(ka, amb_light_intensity);
+        ls = (get_reflectance_light_intensity(ks, light.intensity/r_sqr))*s_dot;
+
+        result_color += (ld + la + ls);
+    }
     return result_color * 255.f;
 }
 
