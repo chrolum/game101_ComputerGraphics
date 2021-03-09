@@ -111,12 +111,43 @@ static Vector3f get_reflectance_light_intensity(const Eigen::Vector3f& k, const 
     //diffuse, specular, or ambient
     return Vector3f(intensity[0]*k[0], intensity[1]*k[1], intensity[2]*k[2]);
 }
+
+static Vector3f get_phong_light_intensity(const light light, const Vector3f& eye_pos, const Vector3f& point, 
+    const Vector3f& normal, const int p, const Vector3f& amb_light_intensity, 
+    const Vector3f& kd, const Vector3f&ka, const Vector3f& ks)
+{
+    // FIXME: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
+    // components are. Then, accumulate that result on the *result_color* object.
+
+    float r = abs((light.position-point).norm());
+
+    Vector3f v = (eye_pos-point).normalized();
+    Vector3f l = (light.position-point).normalized();
+    Vector3f h = (v+l).normalized();
+    float d_dot = normal.dot(l);
+    float s_dot = normal.dot(h);
+
+    s_dot = std::max(s_dot, 0.0f);
+    d_dot = std::max(d_dot, 0.0f);
+    s_dot = pow(s_dot, p);
+
+    double r_sqr = pow(r, 2);
+
+    Vector3f ld, la, ls;
+    ld = (get_reflectance_light_intensity(kd, light.intensity/r_sqr))*d_dot;
+    la = get_reflectance_light_intensity(ka, amb_light_intensity);
+    ls = (get_reflectance_light_intensity(ks, light.intensity/r_sqr))*s_dot;
+
+    return ld + la + ls;
+}
+
 Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
 {
     Eigen::Vector3f return_color = {0, 0, 0};
     if (payload.texture)
     {
-        // TODO: Get the texture value at the texture coordinates of the current fragment
+        auto uv = payload.tex_coords;
+        return_color += payload.texture->getColor(uv[0], uv[1]);
 
     }
     Eigen::Vector3f texture_color;
@@ -143,9 +174,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
 
     for (auto& light : lights)
     {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
-        // components are. Then, accumulate that result on the *result_color* object.
-        
+        result_color += get_phong_light_intensity(light, eye_pos, point, normal, p, amb_light_intensity, kd, ka, ks);
     }
 
     return result_color * 255.f;
@@ -176,36 +205,10 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Vector3f ld, ls, la;
     for (auto& light : lights)
     {
-        // FIXME: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
-        // components are. Then, accumulate that result on the *result_color* object.
-
-        float r = abs((light.position-point).norm());
-
-        // std::cout << point << std::endl;
-        // std::cout << light.position - point << std::endl;
-
-        Vector3f v = (eye_pos-point).normalized();
-        Vector3f l = (light.position-point).normalized();
-        Vector3f h = (v+l).normalized();
-        float d_dot = normal.dot(l);
-        float s_dot = normal.dot(h);
-
-        s_dot = std::max(s_dot, 0.0f);
-        d_dot = std::max(d_dot, 0.0f);
-        s_dot = pow(s_dot, p);
-
-        double r_sqr = pow(r, 2);
-        // std::cout << "r:" << r << " "<< r_sqr << std::endl;
-        ld = (get_reflectance_light_intensity(kd, light.intensity/r_sqr))*d_dot;
-        la = get_reflectance_light_intensity(ka, amb_light_intensity);
-        ls = (get_reflectance_light_intensity(ks, light.intensity/r_sqr))*s_dot;
-
-        result_color += (ld + la + ls);
+        result_color += get_phong_light_intensity(light, eye_pos, point, normal, p, amb_light_intensity, kd, ka, ks);
     }
     return result_color * 255.f;
 }
-
-
 
 Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payload)
 {
@@ -253,7 +256,6 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
 
     return result_color * 255.f;
 }
-
 
 Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
 {
