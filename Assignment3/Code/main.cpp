@@ -50,7 +50,6 @@ Eigen::Matrix4f get_model_matrix(float angle)
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
-    // FIXME: Use the same projection matrix from the previous assignments
     Eigen::Matrix4f persp_to_ortho, projection;
     Eigen::Matrix4f ortho, scale, translate;
 
@@ -116,7 +115,6 @@ static Vector3f get_phong_light_intensity(const light light, const Vector3f& eye
     const Vector3f& normal, const int p, const Vector3f& amb_light_intensity, 
     const Vector3f& kd, const Vector3f&ka, const Vector3f& ks)
 {
-    // FIXME: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
     // components are. Then, accumulate that result on the *result_color* object.
 
     float r = abs((light.position-point).norm());
@@ -232,7 +230,6 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
 
     float kh = 0.2, kn = 0.1;
     
-    // TODO: Implement displacement mapping here
     // Let n = normal = (x, y, z)
     // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
     // Vector b = n cross product t
@@ -301,7 +298,6 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
 
     float kh = 0.2, kn = 0.1;
 
-    // TODO: Implement bump mapping here
     // Let n = normal = (x, y, z)
     // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
     // Vector b = n cross product t

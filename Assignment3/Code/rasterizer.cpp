@@ -172,7 +172,6 @@ static std::tuple<float, float, float> computeBarycentric2D(float x, float y, co
 }
 
 
-//TODO: use map-reduce to implement interpolated
 static float get_z_interpolated(float x, float y, const Triangle& t)
 {
         auto v = t.toVector4();
