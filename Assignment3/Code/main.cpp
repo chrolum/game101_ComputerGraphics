@@ -291,6 +291,25 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
     // Normal n = normalize(TBN * ln)
 
 
+    float x = normal.x(), y = normal.y(), z = normal.z();
+    Eigen::Vector3f t(x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z));
+    Eigen::Vector3f b = normal.cross(t);
+    
+    Eigen::Matrix3f TBN;
+    TBN << t, b, normal;
+
+    auto hmap = payload.texture;
+    auto h = [hmap](float u, float v) {return hmap->getColor(u, v).norm();};
+    float u = payload.tex_coords.x();
+    float v = payload.tex_coords.y();
+    float t_w = hmap->width;
+    float t_h = hmap->height;
+    float dU = kh * kn * (h(u+1/t_w,v)-h(u,v));
+    float dV = kh * kn * (h(u,v+1/t_h)-h(u,v));
+
+    Vector3f ln(-dU, -dV, 1);
+    normal = (TBN*ln).normalized();
+
     Eigen::Vector3f result_color = {0, 0, 0};
     result_color = normal;
 
