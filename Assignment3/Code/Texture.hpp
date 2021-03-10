@@ -1,7 +1,3 @@
-//
-// Created by LEI XU on 4/27/19.
-//
-
 #ifndef RASTERIZER_TEXTURE_H
 #define RASTERIZER_TEXTURE_H
 #include "global.hpp"
@@ -28,6 +24,14 @@ public:
         auto v_img = (1 - v) * height;
         auto color = image_data.at<cv::Vec3b>(v_img, u_img);
         return Eigen::Vector3f(color[0], color[1], color[2]);
+    }
+
+    Eigen::Vector3f getColorBilinear(float u, float v);
+
+    static Eigen::Vector3f lerp_color(float x, const Eigen::Vector3f& c1, const Eigen::Vector3f& c2)
+    {
+        //x = [0,1]
+        return c1 + x*(c2-c1);
     }
 
 };
