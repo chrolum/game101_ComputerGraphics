@@ -47,3 +47,4 @@ Eigen::Vector3f Texture::getColorBilinear(float u, float v)
 
     return final_c;
 }
+

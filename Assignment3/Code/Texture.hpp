@@ -1,7 +1,3 @@
-//
-// Created by LEI XU on 4/27/19.
-//
-
 #ifndef RASTERIZER_TEXTURE_H
 #define RASTERIZER_TEXTURE_H
 #include "global.hpp"
