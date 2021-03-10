@@ -30,5 +30,13 @@ public:
         return Eigen::Vector3f(color[0], color[1], color[2]);
     }
 
+    Eigen::Vector3f getColorBilinear(float u, float v);
+
+    static Eigen::Vector3f lerp_color(float x, const Eigen::Vector3f& c1, const Eigen::Vector3f& c2)
+    {
+        //x = [0,1]
+        return c1 + x*(c2-c1);
+    }
+
 };
 #endif //RASTERIZER_TEXTURE_H
