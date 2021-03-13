@@ -4,6 +4,11 @@
 
 std::vector<cv::Point2f> control_points;
 
+static cv::Point2f lerp(float t, cv::Point2f p0, cv::Point2f p1)
+{
+    return cv::Point2f(p0 + t*(p1-p0));
+}
+
 void mouse_handler(int event, int x, int y, int flags, void *userdata) 
 {
     if (event == cv::EVENT_LBUTTONDOWN && control_points.size() < 4) 
@@ -32,19 +37,39 @@ void naive_bezier(const std::vector<cv::Point2f> &points, cv::Mat &window)
 
 cv::Point2f recursive_bezier(const std::vector<cv::Point2f> &control_points, float t) 
 {
-    // TODO: Implement de Casteljau's algorithm
-    return cv::Point2f();
+    //Implement de Casteljau's algorithm
+    if (control_points.size() == 2)
+    {
+        return lerp(t, control_points[0], control_points[1]);
+    }
 
+    std::vector<cv::Point2f> new_control_points;
+    const int n = control_points.size();
+    for (int i = 0; i < n-1; i++)
+    {
+        new_control_points.push_back(lerp(t, control_points[i], control_points[i+1]));
+    }
+    return recursive_bezier(new_control_points, t);
 }
 
 void bezier(const std::vector<cv::Point2f> &control_points, cv::Mat &window) 
 {
-    // TODO: Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's 
+    //Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's 
     // recursive Bezier algorithm.
-
+    const double step = 0.001;
+    double t = 0;
+    cv::Point2f draw_point;
+    while (t <= 1.0f)
+    {
+        draw_point = recursive_bezier(control_points, t);
+        // std::cout<< draw_point << std::endl;
+        window.at<cv::Vec3b>(draw_point.y, draw_point.x)[1] = 255;
+        t += step;
+    }
+    
 }
 
-int main() 
+int main()
 {
     cv::Mat window = cv::Mat(700, 700, CV_8UC3, cv::Scalar(0));
     cv::cvtColor(window, window, cv::COLOR_BGR2RGB);
@@ -63,7 +88,7 @@ int main()
         if (control_points.size() == 4) 
         {
             naive_bezier(control_points, window);
-            //   bezier(control_points, window);
+            bezier(control_points, window);
 
             cv::imshow("Bezier Curve", window);
             cv::imwrite("my_bezier_curve.png", window);
