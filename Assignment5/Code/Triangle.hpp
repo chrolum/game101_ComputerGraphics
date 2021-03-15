@@ -7,10 +7,38 @@
 bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, const Vector3f& orig,
                           const Vector3f& dir, float& tnear, float& u, float& v)
 {
-    // TODO: Implement this function that tests whether the triangle
+    
+    // FIXME: Implement this function that tests whether the triangle
     // that's specified bt v0, v1 and v2 intersects with the ray (whose
     // origin is *orig* and direction is *dir*)
     // Also don't forget to update tnear, u and v.
+
+    Vector3f e1(v1-v0);
+    Vector3f e2(v2-v0);
+
+    Vector3f s(orig-v0);
+    Vector3f s1(crossProduct(dir, e2));
+    Vector3f s2(crossProduct(s, e1));
+
+
+    Vector3f solution = (1/(dotProduct(s1, e1))) * Vector3f(
+        dotProduct(s2, e2), dotProduct(s1, s), dotProduct(s2, dir));
+    
+    // solution = [t, b1, b2]
+
+    // check inside trangle
+    const float t = solution.x;
+    const float b1 = solution.y;
+    const float b2 = solution.z;
+    u = b1;
+    v = b2;
+    Vector3f intersect_point = Vector3f((1-b1-b2)*v0 + b1*v1 + b2*v2);
+    tnear = dotProduct(intersect_point+orig, intersect_point+orig);
+    // tnear = dotProduct(t*dir, t*dir);
+    if ((1-b1-b2) > 0 && b1 > 0 && b2 > 0)
+    {
+        return true;
+    }
     return false;
 }
 
