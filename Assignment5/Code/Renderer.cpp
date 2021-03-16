@@ -229,9 +229,9 @@ void Renderer::Render(const Scene& scene)
             float x;
             float y;
 
-            x = -1.0f + i * x_step;
-            y = 1.0f + j * y_step;
-            // FIXME: Find the x and y positions of the current pixel to get the direction
+            x = -1.0f + (i+0.5) * x_step;
+            y = 1.0f + (j+0.5) * y_step;
+            // Find the x and y positions of the current pixel to get the direction
             // vector that passes through it.
             // Also, don't forget to multiply both of them with the variable *scale*, and
             // x (horizontal) variable with the *imageAspectRatio*            

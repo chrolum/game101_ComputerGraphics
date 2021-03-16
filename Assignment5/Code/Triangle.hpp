@@ -8,7 +8,7 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1, const Vector3f
                           const Vector3f& dir, float& tnear, float& u, float& v)
 {
     
-    // FIXME: Implement this function that tests whether the triangle
+    // Implement this function that tests whether the triangle
     // that's specified bt v0, v1 and v2 intersects with the ray (whose
     // origin is *orig* and direction is *dir*)
     // Also don't forget to update tnear, u and v.
@@ -32,10 +32,8 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1, const Vector3f
     const float b2 = solution.z;
     u = b1;
     v = b2;
-    Vector3f intersect_point = Vector3f((1-b1-b2)*v0 + b1*v1 + b2*v2);
-    tnear = dotProduct(intersect_point+orig, intersect_point+orig);
-    // tnear = dotProduct(t*dir, t*dir);
-    if ((1-b1-b2) > 0 && b1 > 0 && b2 > 0)
+    tnear = t;
+    if ((1-b1-b2) >= 0 && b1 >= 0 && b2 >= 0 && tnear >= 0)
     {
         return true;
     }
