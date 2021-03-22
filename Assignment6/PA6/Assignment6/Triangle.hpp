@@ -9,6 +9,12 @@
 #include <cassert>
 #include <array>
 
+static Vector3f lerp(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float b1, float b2)
+{
+    float b0 = (1-b1-b2);
+    return b0*v0 + b1*v1 + b2*v2;
+}
+
 bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1,
                           const Vector3f& v2, const Vector3f& orig,
                           const Vector3f& dir, float& tnear, float& u, float& v)
@@ -231,10 +237,14 @@ inline Intersection Triangle::getIntersection(Ray ray)
         return inter;
     t_tmp = dotProduct(e2, qvec) * det_inv;
 
-    // TODO find ray triangle intersection
-
-
-
+    // FIXME: find ray triangle intersection
+    inter.happened = true;
+    inter.distance = t_tmp;
+    inter.coords = lerp(this->v0, this->v1, this->v2, u, v);
+    inter.happened = true;
+    inter.normal = this->normal;
+    inter.obj = this;
+    inter.m = this->m;    
 
     return inter;
 }
