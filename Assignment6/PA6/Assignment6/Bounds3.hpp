@@ -101,7 +101,11 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
     const Vector3f pMax = this->pMax;
     const Vector3f pMin = this->pMin;
 
-    
+    // Vector3f normal_x = Vector3f(pMin.x )
+
+    const Vector3f org = ray.origin;
+    const Vector3f dir = ray.direction;
+
 
 }
 
