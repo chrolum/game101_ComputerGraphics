@@ -240,12 +240,11 @@ inline Intersection Triangle::getIntersection(Ray ray)
     // FIXME: find ray triangle intersection
     inter.happened = true;
     inter.distance = t_tmp;
-    inter.coords = lerp(this->v0, this->v1, this->v2, u, v);
-    inter.happened = true;
+    // inter.coords = lerp(this->v0, this->v1, this->v2, u, v);
+    inter.coords = Vector3f(ray.origin + ray.direction * t_tmp);
     inter.normal = this->normal;
     inter.obj = this;
     inter.m = this->m;    
-
     return inter;
 }
 
