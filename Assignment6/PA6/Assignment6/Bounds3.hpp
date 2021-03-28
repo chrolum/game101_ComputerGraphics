@@ -100,13 +100,21 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
     // Vector3f dirIsNeg(int(ray.origin.x > 0), int(1/ray.origin.y > 0), int(1/ray.origin.z > 0));
     const Vector3f pMax = this->pMax;
     const Vector3f pMin = this->pMin;
+    
+    Vector3f t_min, t_max;
 
-    // Vector3f normal_x = Vector3f(pMin.x )
+    t_min = (pMin - ray.origin) * invDir;
+    t_max = (pMax - ray.origin) * invDir;
 
-    const Vector3f org = ray.origin;
-    const Vector3f dir = ray.direction;
+    float t_enter, t_exit;
 
+    t_enter = std::max((t_min.x, t_min.y), t_min.z);
+    t_exit = std::min((t_max.x, t_max.y), t_max.z);
 
+    if (t_enter < t_exit && t_exit >= 0)
+        return true;
+
+    return false;
 }
 
 inline Bounds3 Union(const Bounds3& b1, const Bounds3& b2)
