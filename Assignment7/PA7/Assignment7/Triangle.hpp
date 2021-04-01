@@ -252,7 +252,14 @@ inline Intersection Triangle::getIntersection(Ray ray)
         return inter;
     t_tmp = dotProduct(e2, qvec) * det_inv;
 
-    // TODO find ray triangle intersection
+    // FIXME find ray triangle intersection
+    inter.happened = true;
+    inter.distance = t_tmp;
+    // inter.coords = lerp(this->v0, this->v1, this->v2, u, v);
+    inter.coords = Vector3f(ray.origin + ray.direction * t_tmp);
+    inter.normal = this->normal;
+    inter.obj = this;
+    inter.m = this->m;    
 
     return inter;
 }

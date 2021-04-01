@@ -95,7 +95,31 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
 {
     // invDir: ray direction(x,y,z), invDir=(1.0/x,1.0/y,1.0/z), use this because Multiply is faster that Division
     // dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x>0),int(y>0),int(z>0)], use this to simplify your logic
-    // TODO test if ray bound intersects
+    // FIXME test if ray bound intersects
+    const Vector3f pMax = this->pMax;
+    const Vector3f pMin = this->pMin;
+    
+    // the usage of dirIsNeg?
+
+    Vector3f t_min, t_max, t_top, t_bot;
+
+    //Note!
+    t_bot = (pMin - ray.origin) * invDir;
+    t_top = (pMax - ray.origin) * invDir;
+
+    t_min = Vector3f::Min(t_top, t_bot);
+    t_max = Vector3f::Max(t_top, t_bot);
+    
+    float t_enter, t_exit;
+
+    t_enter = std::max(std::max(t_min.x, t_min.y), t_min.z);
+    t_exit = std::min(std::min(t_max.x, t_max.y), t_max.z);
+    //TODO t_enter == t_exit时的判断问题
+    if (t_enter < t_exit && t_exit >= 0)
+    {
+        return true;
+    }
+    
 
 }
 
