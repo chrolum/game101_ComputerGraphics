@@ -85,7 +85,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         {   
             // return light_sample.emit;
             L_dir = light_sample.emit * its.m->eval(wo, ws, its.normal) 
-            * dotProduct(ws, its.normal) * dotProduct(ws, light_sample.normal)
+            * dotProduct(ws, its.normal) * dotProduct(-ws, light_sample.normal)
             / dotProduct((p-x), (p-x))
             / pdf;
         }
