@@ -3,7 +3,7 @@
 //
 
 #include "Scene.hpp"
-
+#define EPSILON 1e-4
 
 void Scene::buildBVH() {
     printf(" - Generating BVH...\n\n");
@@ -60,5 +60,52 @@ bool Scene::trace(
 // Implementation of Path Tracing
 Vector3f Scene::castRay(const Ray &ray, int depth) const
 {
-    // TO DO Implement Path Tracing Algorithm here
+    // TODO Implement Path Tracing Algorithm here
+    Intersection its;
+    its = intersect(ray);
+    float pdf;
+    Vector3f p(its.coords);
+    
+    Vector3f L_dir(0, 0, 0);
+    Vector3f L_indir(0, 0, 0);
+
+    if (its.happened)
+    {
+        Intersection light_sample;
+        sampleLight(light_sample, pdf);
+        Vector3f x(light_sample.coords);
+        Vector3f ws = normalize(light_sample.coords - its.coords);
+        Vector3f wo = (-ray.direction).normalized();
+        Ray ray_p2x = Ray(p, ws);
+
+        Intersection collode = Scene::intersect(ray_p2x);
+        // if the ray not blocked in the middle
+        bool hasBlocked = ((p-x).norm() - collode.distance) > EPSILON;
+        if (!hasBlocked)//directed light
+        {   
+            // return light_sample.emit;
+            L_dir = light_sample.emit * its.m->eval(wo, ws, its.normal) 
+            * dotProduct(ws, its.normal) * dotProduct(ws, light_sample.normal)
+            / dotProduct((p-x), (p-x))
+            / pdf;
+        }
+        else
+        {
+            Vector3f wi = its.m->sample(ray.direction, its.normal);
+            // trace()
+        }
+    }
+    // hit test
+    // Intersection intersection = Scene::intersect(ray);
+    // Vector3f hitColor = this->backgroundColor;
+    // Material *m = intersection.m;
+    // Object *hitObject = intersection.obj;
+    // if (intersection.happened) {
+    //     return Vector3f(1.0f);
+    // }
+    // else {
+    //     return Vector3f(0.0f);
+    // }
+
+    return L_dir + L_indir;
 }
