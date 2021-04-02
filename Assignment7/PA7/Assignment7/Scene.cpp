@@ -69,8 +69,13 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     Vector3f L_dir(0, 0, 0);
     Vector3f L_indir(0, 0, 0);
 
+    //light source
     if (its.happened)
     {
+        if (its.m->hasEmission())
+        {
+            return its.m->getEmission();
+        }
         Intersection light_sample;
         sampleLight(light_sample, pdf);
         Vector3f x(light_sample.coords);
@@ -80,8 +85,10 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 
         Intersection collode = Scene::intersect(ray_p2x);
         // if the ray not blocked in the middle
-        bool hasBlocked = ((p-x).norm() - collode.distance) > EPSILON;
-        if (!hasBlocked)//directed light
+
+        // 不同判断是否与光源相交的方法，会导致有很大区别
+        // bool hasBlocked = ((p-x).norm() - collode.distance) > EPSILON;
+        if (collode.happened && collode.m->hasEmission())//directed light
         {   
             // return light_sample.emit;
             L_dir = light_sample.emit * its.m->eval(wo, ws, its.normal) 
@@ -89,10 +96,25 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
             / dotProduct((p-x), (p-x))
             / pdf;
         }
-        else
+        else //RR
         {
-            Vector3f wi = its.m->sample(ray.direction, its.normal);
-            // trace()
+            // float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+            bool RR_fire = get_random_float() > Scene::RussianRoulette;
+
+            if (!RR_fire)
+            {
+                Vector3f wi = its.m->sample(wo, its.normal).normalized();
+                Intersection indir_inter =  Scene::intersect(Ray(p, wi));
+                if (indir_inter.happened && !indir_inter.m->hasEmission())
+                {
+                    L_indir = Scene::castRay(Ray(indir_inter.coords, wi), 0)
+                        * indir_inter.m->eval(wo, wi, its.normal)
+                        * dotProduct(wi, its.normal)
+                        / indir_inter.m->pdf(wo, wi, its.normal)
+                        / Scene::RussianRoulette;
+                }
+            }
         }
     }
     // hit test
